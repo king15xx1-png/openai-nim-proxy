@@ -215,7 +215,25 @@ app.post('/v1/chat/completions', async (req, res) => {
     
   } catch (error) {
     console.error('Proxy error:', error.message);
-    
+
+    // Enhanced diagnostics for upstream API errors (e.g. 401 from NVIDIA NIM)
+    if (error.response) {
+      const maskedKey = NIM_API_KEY
+        ? `${NIM_API_KEY.slice(0, 10)}...${NIM_API_KEY.slice(-4)}`
+        : '(not set)';
+
+      console.error('NVIDIA NIM error response:', {
+        status: error.response.status,
+        data: error.response.data,
+      });
+      console.error('NIM_API_BASE:', NIM_API_BASE);
+      console.error('API key used (masked):', maskedKey);
+      console.error('Request headers sent:', {
+        'Authorization': `Bearer ${maskedKey}`,
+        'Content-Type': 'application/json',
+      });
+    }
+
     res.status(error.response?.status || 500).json({
       error: {
         message: error.message || 'Internal server error',
